@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Voice Recorder</title>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #f9fafb; color: #111827; overflow: hidden; }
+        .container { text-align: center; padding: 30px; width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .visualizer-zone { width: 120px; height: 120px; margin-bottom: 30px; position: relative; display: flex; align-items: center; justify-content: center; }
+        .pulse-ring { width: 100%; height: 100%; border-radius: 50%; background-color: rgba(239, 68, 68, 0.15); position: absolute; animation: pulse 1.8s infinite ease-in-out; }
+        .mic-icon { font-size: 54px; z-index: 2; }
+        button { width: 100%; max-width: 280px; padding: 18px 30px; font-size: 18px; font-weight: 600; border: none; border-radius: 16px; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: transform 0.1s ease, background-color 0.2s ease; }
+        button:active { transform: scale(0.98); }
+        .btn-stop { background-color: #ef4444; color: white; }
+        .btn-stop:hover { background-color: #dc2626; }
+        .btn-start { background-color: #3b82f6; color: white; }
+        .btn-start:hover { background-color: #2563eb; }
+        .status { font-size: 24px; font-weight: 700; color: #ef4444; margin-bottom: 8px; }
+        .hint { font-size: 15px; color: #6b7280; margin-top: 20px; font-weight: 400; }
+        @keyframes pulse { 0% { transform: scale(0.85); opacity: 0.3; } 50% { transform: scale(1.15); opacity: 0.8; } 100% { transform: scale(0.85); opacity: 0.3; } }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="visualizer-zone">
+            <div id="pulse" class="pulse-ring"></div>
+            <div class="mic-icon">🎙️</div>
+        </div>
+        <div id="status" class="status">Recording...</div>
+        <button id="recordBtn" class="btn-stop">🛑 Stop & Save</button>
+        <div id="hint" class="hint"></div>
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        const recordBtn = document.getElementById('recordBtn');
+        const statusDiv = document.getElementById('status');
+        const hintDiv = document.getElementById('hint');
+        const pulseDiv = document.getElementById('pulse');
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initAutoRecord();
+        });
+
+        async function initAutoRecord() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+                
+                const options = MediaRecorder.isTypeSupported('audio/webm') ? {mimeType: 'audio/webm'} : {};
+                mediaRecorder = new MediaRecorder(stream, options);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = e => {
+                    if (e.data && e.data.size > 0) audioChunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    statusDiv.textContent = "Saving audio...";
+                    statusDiv.style.color = "#3b82f6";
+                    pulseDiv.style.animation = "none";
+                    pulseDiv.style.backgroundColor = "rgba(59, 130, 246, 0.15)";
+                    recordBtn.style.display = "none";
+
+                    const compiledBlob = new Blob(audioChunks, {type: mediaRecorder.mimeType || 'audio/webm'});
+                    const reader = new FileReader();
+                    reader.readAsDataURL(compiledBlob);
+                    
+                    reader.onloadend = () => {
+                        // THIS IS THE HANDOFF SNIPPET:
+                        if (window.opener) {
+                            window.opener.postMessage({
+                                type: 'AUDIO_CAPTURE_SUCCESS',
+                                base64DataUrl: reader.result
+                            }, '*');
+                        }
+                        window.close();
+                    };
+
+                    stream.getTracks().forEach(track => track.stop());
+                };
+
+                mediaRecorder.start();
+            } catch (err) {
+                console.error("Capture runtime block exception:", err);
+                statusDiv.textContent = "Permission Required";
+                statusDiv.style.color = "#111827";
+                pulseDiv.style.animation = "none";
+                hintDiv.textContent = "Please enable microphone access in your browser bars to proceed.";
+                recordBtn.textContent = "🎙️ Start Recording";
+                recordBtn.className = "btn-start";
+            }
+        }
+
+        recordBtn.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+            } else {
+                recordBtn.textContent = "🛑 Stop & Save";
+                recordBtn.className = "btn-stop";
+                statusDiv.textContent = "Recording...";
+                statusDiv.style.color = "#ef4444";
+                pulseDiv.style.animation = "pulse 1.8s infinite ease-in-out";
+                pulseDiv.style.backgroundColor = "rgba(239, 68, 68, 0.15)";
+                initAutoRecord();
+            }
+        });
+    </script>
+</body>
+</html>
