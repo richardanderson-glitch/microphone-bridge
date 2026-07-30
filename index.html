@@ -3,210 +3,210 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Microphone Recorder Bridge</title>
+  <title>Student Voice Submission</title>
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       padding: 20px;
-      box-sizing: border-box;
-      background-color: #f8fafc;
-      color: #1e293b;
+      background-color: #f4f7f9;
+      color: #333;
     }
-
-    .card {
-      background: #ffffff;
-      padding: 24px;
+    .container {
+      max-width: 450px;
+      margin: auto;
+      background: white;
+      padding: 30px;
       border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      width: 100%;
-      max-width: 360px;
-      text-align: center;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     }
-
-    h3 {
-      margin-top: 0;
-      color: #0f172a;
+    h2 { text-align: center; color: #2c3e50; margin-top: 0; }
+    label { display: block; margin-top: 15px; font-weight: bold; font-size: 0.9em; }
+    input, select {
+      width: 100%; padding: 12px; margin-top: 5px;
+      border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;
     }
-
-    .timer {
-      font-size: 2.2em;
-      font-family: monospace;
-      font-weight: bold;
-      margin: 15px 0;
-      color: #3b82f6;
+    .recording-box {
+      border: 2px dashed #cbd5e0; border-radius: 8px;
+      padding: 20px; text-align: center; margin: 20px 0; background: #fafafa;
     }
-
-    .btn {
-      width: 100%;
-      padding: 12px;
-      font-size: 16px;
-      font-weight: 600;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-      margin-top: 8px;
+    .timer { font-family: monospace; font-size: 1.8em; font-weight: bold; color: #3182ce; }
+    button {
+      width: 100%; padding: 12px; border: none; border-radius: 6px;
+      font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px;
     }
-
-    .btn-record {
-      background-color: #2563eb;
-      color: white;
-    }
-
-    .btn-record:hover {
-      background-color: #1d4ed8;
-    }
-
-    .btn-stop {
-      background-color: #dc2626;
-      color: white;
-    }
-
-    .btn-stop:hover {
-      background-color: #b91c1c;
-    }
-
-    .btn:disabled {
-      background-color: #94a3b8;
-      cursor: not-allowed;
-    }
-
-    #status {
-      margin-top: 15px;
-      font-size: 0.9em;
-      color: #64748b;
-    }
+    .btn-record { background-color: #3182ce; color: white; }
+    .btn-stop { background-color: #e53e3e; color: white; }
+    .btn-submit { background-color: #38a169; color: white; }
+    button:disabled { background-color: #cbd5e0; cursor: not-allowed; }
+    #status { margin-top: 15px; text-align: center; font-weight: bold; }
+    audio { width: 100%; margin-top: 15px; }
   </style>
 </head>
 <body>
 
-  <div class="card">
-    <h3>Voice Recording</h3>
+<div class="container">
+  <h2>Student Voice Submission</h2>
+
+  <label>Full Name</label>
+  <input type="text" id="name" placeholder="Enter your name" required>
+
+  <label>Grade Level</label>
+  <select id="grade">
+    <option value="">-- Select Grade --</option>
+    <option value="6">Grade 6</option>
+    <option value="7">Grade 7</option>
+    <option value="8">Grade 8</option>
+    <option value="9">Grade 9</option>
+    <option value="10">Grade 10</option>
+    <option value="11">Grade 11</option>
+  </select>
+
+  <label>Language / Exam</label>
+  <select id="exam">
+    <option value="">-- Select Exam --</option>
+    <option value="ms-french">MS French</option>
+    <option value="ms-spanish">MS Spanish</option>
+    <option value="ms-chinese">MS Chinese</option>
+    <option value="us-french">US French</option>
+    <option value="us-spanish">US Spanish</option>
+    <option value="us-chinese">US Chinese</option>
+  </select>
+
+  <div class="recording-box">
     <div id="timer" class="timer">00:00</div>
-
-    <button id="recordBtn" class="btn btn-record" onclick="startRecording()">🎙️ Start Recording</button>
-    <button id="stopBtn" class="btn btn-stop" onclick="stopRecording()" disabled>⏹️ Stop & Send</button>
-
-    <div id="status">Click "Start Recording" to begin.</div>
+    <button id="recordBtn" class="btn-record" onclick="startRecording()">🎙️ Start Recording</button>
+    <button id="stopBtn" class="btn-stop" onclick="stopRecording()" disabled>⏹️ Stop Recording</button>
   </div>
 
-  <script>
-    let mediaRecorder;
-    let audioChunks = [];
-    let timerInterval;
-    let secondsElapsed = 0;
+  <div id="previewArea"></div>
+  
+  <button id="submitBtn" class="btn-submit" onclick="submitForm()" disabled>📤 Submit Assignment</button>
+  <div id="status">Complete form & recording to submit</div>
+</div>
 
-    function updateTimer() {
-      secondsElapsed++;
-      const mins = Math.floor(secondsElapsed / 60).toString().padStart(2, '0');
-      const secs = (secondsElapsed % 60).toString().padStart(2, '0');
-      document.getElementById('timer').innerText = `${mins}:${secs}`;
+<script>
+  // PASTE YOUR APPS SCRIPT WEB APP URL HERE:
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec";
 
-      if (secondsElapsed >= 300) {
-        stopRecording();
-      }
+  let mediaRecorder;
+  let audioChunks = [];
+  let timerInterval;
+  let secondsElapsed = 0;
+  let recordedAudioBase64 = null;
+
+  function validateForm() {
+    const name = document.getElementById('name').value.trim();
+    const grade = document.getElementById('grade').value;
+    const exam = document.getElementById('exam').value;
+    if (!name || !grade || !exam) {
+      alert("Please complete Name, Grade, and Exam selections.");
+      return false;
     }
+    return true;
+  }
 
-    async function startRecording() {
-      const statusDiv = document.getElementById('status');
+  async function startRecording() {
+    if (!validateForm()) return;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
       audioChunks = [];
 
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-
-        mediaRecorder.ondataavailable = event => {
-          if (event.data.size > 0) {
-            audioChunks.push(event.data);
-          }
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = () => {
+          recordedAudioBase64 = reader.result;
+          document.getElementById('previewArea').innerHTML = `<audio controls src="${URL.createObjectURL(audioBlob)}"></audio>`;
+          document.getElementById('submitBtn').disabled = false;
+          document.getElementById('status').innerText = "Recording ready to submit!";
+          document.getElementById('status').style.color = "green";
         };
+        stream.getTracks().forEach(track => track.stop());
+      };
 
-        mediaRecorder.onstop = () => {
-          statusDiv.innerText = "Processing audio payload...";
-          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-          
-          const reader = new FileReader();
-          reader.readAsDataURL(audioBlob);
-          reader.onloadend = () => {
-            const base64DataUrl = reader.result;
-            const payload = {
-              type: 'AUDIO_CAPTURE_SUCCESS',
-              base64DataUrl: base64DataUrl
-            };
+      mediaRecorder.start();
+      secondsElapsed = 0;
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        secondsElapsed++;
+        const mins = Math.floor(secondsElapsed / 60).toString().padStart(2, '0');
+        const secs = (secondsElapsed % 60).toString().padStart(2, '0');
+        document.getElementById('timer').innerText = `${mins}:${secs}`;
+      }, 1000);
 
-            // Safely post message back through Google's nested iframe architecture
-            let sent = false;
+      document.getElementById('recordBtn').disabled = true;
+      document.getElementById('stopBtn').disabled = false;
+      document.getElementById('status').innerText = "Recording in progress...";
+      document.getElementById('status').style.color = "red";
+    } catch (err) {
+      alert("Microphone permission denied or unavailable: " + err.message);
+    }
+  }
 
-            if (window.opener) {
-              // Try posting to top window of opener
-              try {
-                window.opener.top.postMessage(payload, '*');
-                sent = true;
-              } catch (e) {}
+  function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+      clearInterval(timerInterval);
+      document.getElementById('recordBtn').disabled = false;
+      document.getElementById('stopBtn').disabled = true;
+    }
+  }
 
-              // Try direct opener window
-              if (!sent) {
-                try {
-                  window.opener.postMessage(payload, '*');
-                  sent = true;
-                } catch (e) {}
-              }
-            }
-
-            if (!sent && window.parent) {
-              try {
-                window.parent.postMessage(payload, '*');
-                sent = true;
-              } catch (e) {}
-            }
-
-            if (sent) {
-              statusDiv.innerText = "Recording sent! Closing window...";
-              statusDiv.style.color = "#16a34a";
-              setTimeout(() => {
-                window.close();
-              }, 800);
-            } else {
-              statusDiv.innerText = "Error: Could not target parent window.";
-              statusDiv.style.color = "#dc2626";
-            }
-          };
-
-          stream.getTracks().forEach(track => track.stop());
-        };
-
-        mediaRecorder.start();
-
-        secondsElapsed = 0;
-        document.getElementById('timer').innerText = "00:00";
-        timerInterval = setInterval(updateTimer, 1000);
-
-        document.getElementById('recordBtn').disabled = true;
-        document.getElementById('stopBtn').disabled = false;
-        statusDiv.innerText = "Recording in progress...";
-        statusDiv.style.color = "#dc2626";
-
-      } catch (err) {
-        statusDiv.innerText = "Microphone Permission Error: " + err.message;
-        statusDiv.style.color = "#dc2626";
-      }
+  async function submitForm() {
+    if (!validateForm()) return;
+    if (!recordedAudioBase64) {
+      alert("Please record audio first.");
+      return;
     }
 
-    function stopRecording() {
-      if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        mediaRecorder.stop();
-        clearInterval(timerInterval);
-        document.getElementById('stopBtn').disabled = true;
-        document.getElementById('status').innerText = "Stopping recorder...";
-        document.getElementById('status').style.color = "#64748b";
-      }
+    const submitBtn = document.getElementById('submitBtn');
+    const statusDiv = document.getElementById('status');
+    
+    submitBtn.disabled = true;
+    statusDiv.innerText = "Uploading recording to Google Drive...";
+    statusDiv.style.color = "#3182ce";
+
+    const studentInfo = {
+      name: document.getElementById('name').value.trim(),
+      grade: document.getElementById('grade').value,
+      exam: document.getElementById('exam').value
+    };
+
+    const fileName = `${studentInfo.name}_Grade${studentInfo.grade}_${studentInfo.exam}.webm`;
+
+    const payload = {
+      rawDataUrl: recordedAudioBase64,
+      fileName: fileName,
+      studentInfo: studentInfo
+    };
+
+    try {
+      // Use text/plain to prevent CORS preflight OPTIONS check in Apps Script
+      await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify(payload)
+      });
+
+      statusDiv.innerText = "✅ Submitted successfully!";
+      statusDiv.style.color = "green";
+      
+      // Reset form after submission
+      setTimeout(() => {
+        location.reload();
+      }, 3000);
+
+    } catch (err) {
+      statusDiv.innerText = "Error submitting: " + err.message;
+      statusDiv.style.color = "red";
+      submitBtn.disabled = false;
     }
-  </script>
+  }
+</script>
 </body>
 </html>
