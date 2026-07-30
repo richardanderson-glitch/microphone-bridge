@@ -6,39 +6,44 @@
   <title>Student Voice Submission</title>
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       padding: 20px;
-      background-color: #f4f7f9;
-      color: #333;
+      background-color: #f8fafc;
+      color: #1e293b;
     }
     .container {
       max-width: 450px;
-      margin: auto;
+      margin: 0 auto;
       background: white;
       padding: 30px;
       border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
     }
-    h2 { text-align: center; color: #2c3e50; margin-top: 0; }
-    label { display: block; margin-top: 15px; font-weight: bold; font-size: 0.9em; }
+    h2 { text-align: center; color: #0f172a; margin-top: 0; }
+    label { display: block; margin-top: 15px; font-weight: 600; font-size: 0.9em; }
     input, select {
       width: 100%; padding: 12px; margin-top: 5px;
-      border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;
+      border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;
+      font-size: 14px;
     }
     .recording-box {
-      border: 2px dashed #cbd5e0; border-radius: 8px;
+      border: 2px dashed #cbd5e1; border-radius: 8px;
       padding: 20px; text-align: center; margin: 20px 0; background: #fafafa;
     }
-    .timer { font-family: monospace; font-size: 1.8em; font-weight: bold; color: #3182ce; }
+    .timer { font-family: monospace; font-size: 1.8em; font-weight: bold; color: #2563eb; }
     button {
       width: 100%; padding: 12px; border: none; border-radius: 6px;
-      font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px;
+      font-weight: 600; cursor: pointer; transition: 0.2s ease; margin-top: 10px;
+      font-size: 15px;
     }
-    .btn-record { background-color: #3182ce; color: white; }
-    .btn-stop { background-color: #e53e3e; color: white; }
-    .btn-submit { background-color: #38a169; color: white; }
-    button:disabled { background-color: #cbd5e0; cursor: not-allowed; }
-    #status { margin-top: 15px; text-align: center; font-weight: bold; }
+    .btn-record { background-color: #2563eb; color: white; }
+    .btn-record:hover { background-color: #1d4ed8; }
+    .btn-stop { background-color: #dc2626; color: white; }
+    .btn-stop:hover { background-color: #b91c1c; }
+    .btn-submit { background-color: #16a34a; color: white; }
+    .btn-submit:hover { background-color: #15803d; }
+    button:disabled { background-color: #cbd5e1; cursor: not-allowed; }
+    #status { margin-top: 15px; text-align: center; font-weight: 600; font-size: 0.95em; color: #64748b; }
     audio { width: 100%; margin-top: 15px; }
   </style>
 </head>
@@ -47,10 +52,10 @@
 <div class="container">
   <h2>Student Voice Submission</h2>
 
-  <label>Full Name</label>
-  <input type="text" id="name" placeholder="Enter your name" required>
+  <label for="name">Full Name</label>
+  <input type="text" id="name" placeholder="Enter full name" required>
 
-  <label>Grade Level</label>
+  <label for="grade">Grade Level</label>
   <select id="grade">
     <option value="">-- Select Grade --</option>
     <option value="6">Grade 6</option>
@@ -61,15 +66,15 @@
     <option value="11">Grade 11</option>
   </select>
 
-  <label>Language / Exam</label>
+  <label for="exam">Language / Exam</label>
   <select id="exam">
     <option value="">-- Select Exam --</option>
-    <option value="ms-french">MS French</option>
-    <option value="ms-spanish">MS Spanish</option>
-    <option value="ms-chinese">MS Chinese</option>
-    <option value="us-french">US French</option>
-    <option value="us-spanish">US Spanish</option>
-    <option value="us-chinese">US Chinese</option>
+    <option value="MS French">MS French</option>
+    <option value="MS Spanish">MS Spanish</option>
+    <option value="MS Chinese">MS Chinese</option>
+    <option value="US French">US French</option>
+    <option value="US Spanish">US Spanish</option>
+    <option value="US Chinese">US Chinese</option>
   </select>
 
   <div class="recording-box">
@@ -85,8 +90,8 @@
 </div>
 
 <script>
-  // PASTE YOUR APPS SCRIPT WEB APP URL HERE:
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwP8CdTTFVpkPjwI19RvHqMVgwi9Om9dmMlEpBtX5Gmu8LZciJC8emQ_KLwS-B4cAg/exec";
+  // Replace this with your Google Apps Script Web App URL ending in /exec
+  const APPS_SCRIPT_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
 
   let mediaRecorder;
   let audioChunks = [];
@@ -99,7 +104,7 @@
     const grade = document.getElementById('grade').value;
     const exam = document.getElementById('exam').value;
     if (!name || !grade || !exam) {
-      alert("Please complete Name, Grade, and Exam selections.");
+      alert("Please fill out your Name, Grade, and Exam selection before proceeding.");
       return false;
     }
     return true;
@@ -122,8 +127,8 @@
           recordedAudioBase64 = reader.result;
           document.getElementById('previewArea').innerHTML = `<audio controls src="${URL.createObjectURL(audioBlob)}"></audio>`;
           document.getElementById('submitBtn').disabled = false;
-          document.getElementById('status').innerText = "Recording ready to submit!";
-          document.getElementById('status').style.color = "green";
+          document.getElementById('status').innerText = "Recording ready! Click Submit Assignment.";
+          document.getElementById('status').style.color = "#16a34a";
         };
         stream.getTracks().forEach(track => track.stop());
       };
@@ -141,7 +146,7 @@
       document.getElementById('recordBtn').disabled = true;
       document.getElementById('stopBtn').disabled = false;
       document.getElementById('status').innerText = "Recording in progress...";
-      document.getElementById('status').style.color = "red";
+      document.getElementById('status').style.color = "#dc2626";
     } catch (err) {
       alert("Microphone permission denied or unavailable: " + err.message);
     }
@@ -159,7 +164,7 @@
   async function submitForm() {
     if (!validateForm()) return;
     if (!recordedAudioBase64) {
-      alert("Please record audio first.");
+      alert("Please record audio before submitting.");
       return;
     }
 
@@ -167,8 +172,8 @@
     const statusDiv = document.getElementById('status');
     
     submitBtn.disabled = true;
-    statusDiv.innerText = "Uploading recording to Google Drive...";
-    statusDiv.style.color = "#3182ce";
+    statusDiv.innerText = "Uploading recording to Google Drive & logging to Sheet...";
+    statusDiv.style.color = "#2563eb";
 
     const studentInfo = {
       name: document.getElementById('name').value.trim(),
@@ -185,26 +190,24 @@
     };
 
     try {
-      // Use text/plain to prevent CORS preflight OPTIONS check in Apps Script
       await fetch(APPS_SCRIPT_URL, {
-  method: "POST",
-  mode: "no-cors",
-  headers: { "Content-Type": "text/plain;charset=utf-8" },
-  body: JSON.stringify(payload),
-  redirect: "follow"
-});
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload),
+        redirect: "follow"
+      });
 
       statusDiv.innerText = "✅ Submitted successfully!";
-      statusDiv.style.color = "green";
+      statusDiv.style.color = "#16a34a";
       
-      // Reset form after submission
       setTimeout(() => {
         location.reload();
       }, 3000);
 
     } catch (err) {
-      statusDiv.innerText = "Error submitting: " + err.message;
-      statusDiv.style.color = "red";
+      statusDiv.innerText = "Error submitting form: " + err.message;
+      statusDiv.style.color = "#dc2626";
       submitBtn.disabled = false;
     }
   }
