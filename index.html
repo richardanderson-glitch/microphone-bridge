@@ -108,7 +108,6 @@
       const secs = (secondsElapsed % 60).toString().padStart(2, '0');
       document.getElementById('timer').innerText = `${mins}:${secs}`;
 
-      // Automatically stop recording if it reaches 5 minutes (300 seconds)
       if (secondsElapsed >= 300) {
         stopRecording();
       }
@@ -119,7 +118,6 @@
       audioChunks = [];
 
       try {
-        // Request microphone access from the browser
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         mediaRecorder = new MediaRecorder(stream);
 
@@ -133,37 +131,58 @@
           statusDiv.innerText = "Processing audio payload...";
           const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
           
-          // Convert binary audio blob to Base64 data URL
           const reader = new FileReader();
           reader.readAsDataURL(audioBlob);
           reader.onloadend = () => {
             const base64DataUrl = reader.result;
+            const payload = {
+              type: 'AUDIO_CAPTURE_SUCCESS',
+              base64DataUrl: base64DataUrl
+            };
 
-            // Send base64 payload to the main Apps Script parent window
+            // Safely post message back through Google's nested iframe architecture
+            let sent = false;
+
             if (window.opener) {
-              window.opener.postMessage({
-                type: 'AUDIO_CAPTURE_SUCCESS',
-                base64DataUrl: base64DataUrl
-              }, '*'); // Allows posting back to Apps Script origin
+              // Try posting to top window of opener
+              try {
+                window.opener.top.postMessage(payload, '*');
+                sent = true;
+              } catch (e) {}
 
+              // Try direct opener window
+              if (!sent) {
+                try {
+                  window.opener.postMessage(payload, '*');
+                  sent = true;
+                } catch (e) {}
+              }
+            }
+
+            if (!sent && window.parent) {
+              try {
+                window.parent.postMessage(payload, '*');
+                sent = true;
+              } catch (e) {}
+            }
+
+            if (sent) {
               statusDiv.innerText = "Recording sent! Closing window...";
-              
-              // Give the message a moment to emit before closing the pop-up
+              statusDiv.style.color = "#16a34a";
               setTimeout(() => {
                 window.close();
-              }, 1000);
+              }, 800);
             } else {
-              statusDiv.innerText = "Error: Parent window connection lost.";
+              statusDiv.innerText = "Error: Could not target parent window.";
+              statusDiv.style.color = "#dc2626";
             }
           };
 
-          // Stop microphone hardware usage
           stream.getTracks().forEach(track => track.stop());
         };
 
         mediaRecorder.start();
 
-        // Update UI status
         secondsElapsed = 0;
         document.getElementById('timer').innerText = "00:00";
         timerInterval = setInterval(updateTimer, 1000);
