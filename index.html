@@ -36,16 +36,18 @@
       font-weight: 600; cursor: pointer; transition: 0.2s ease; margin-top: 10px;
       font-size: 15px;
     }
-    .form-logo {
+ .form-logo {
   display: block;
-  max-width: 400px; /* Adjust size as needed */
-  height: auto;
+  width: 100%;          /* Allows image to fill container width */
+  max-width: 160px;     /* Prevents logo from growing too large on desktop */
+  height: auto;         /* Preserves aspect ratio with zero distortion */
   margin: 0 auto 15px auto;
 }
-       .form-footer {
+.form-footer {
   display: block;
-  max-width: 250px; /* Adjust size as needed */
-  height: auto;
+  width: 100%;          /* Allows image to fill container width */
+  max-width: 160px;     /* Prevents logo from growing too large on desktop */
+  height: auto;         /* Preserves aspect ratio with zero distortion */
   margin: 0 auto 15px auto;
 }
     .btn-record { background-color: #032f60; color: white; }
