@@ -36,22 +36,22 @@
       font-weight: 600; cursor: pointer; transition: 0.2s ease; margin-top: 10px;
       font-size: 15px;
     }
- .form-logo {
-  display: block;
-  width: 100%;          /* Allows image to fill container width */
-  max-width: 160px;     /* Prevents logo from growing too large on desktop */
-  height: auto;         /* Preserves aspect ratio with zero distortion */
-  margin: 0 auto 15px auto;
-}
-.form-footer {
-  display: block;
-  width: 100%;          /* Allows image to fill container width */
-  max-width: 160px;     /* Prevents logo from growing too large on desktop */
-  height: auto;         /* Preserves aspect ratio with zero distortion */
-  margin: 0 auto 15px auto;
-}
+    .form-logo {
+      display: block;
+      width: 100%;          /* Allows image to fill container width */
+      max-width: 160px;     /* Prevents logo from growing too large on desktop */
+      height: auto;         /* Preserves aspect ratio with zero distortion */
+      margin: 0 auto 15px auto;
+    }
+    .form-footer {
+      display: block;
+      width: 100%;          /* Allows image to fill container width */
+      max-width: 160px;     /* Prevents logo from growing too large on desktop */
+      height: auto;         /* Preserves aspect ratio with zero distortion */
+      margin: 15px auto 0 auto;
+    }
     .btn-record { background-color: #032f60; color: white; }
-    .btn-record:hover { background-color: #bccee2; }
+    .btn-record:hover { background-color: #1e4a7a; }
     .btn-stop { background-color: #dc2626; color: white; }
     .btn-stop:hover { background-color: #b91c1c; }
     .btn-submit { background-color: #16a34a; color: white; }
@@ -64,7 +64,7 @@
 <body>
 
 <div class="container">
-<img src="WIS_logo_left_rgb.png" alt="Logo" class="form-logo" />
+  <img src="WIS_logo_left_rgb.png" alt="WIS Logo" class="form-logo" />
  
   <h2>Student Voice Submission</h2>
 
@@ -102,13 +102,13 @@
   <div id="previewArea"></div>
   
   <button id="submitBtn" class="btn-submit" onclick="submitForm()" disabled>📤 Submit Assignment</button>
-  <div id="status">Complete form & recording to submit<br><br>Developed by<br></div>
+  <div id="status">Complete form & recording to submit</div>
 
-  <img src="Horiz_Logo_sm.png" alt="Logo" class="form-footer" />
+  <div style="text-align: center; font-size: 0.85em; color: #64748b; margin-top: 20px;">Developed by</div>
+  <img src="Horiz_Logo_sm.png" alt="Developer Logo" class="form-footer" />
 </div>
 
 <script>
-  // Replace this with your Google Apps Script Web App URL ending in /exec
   const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwP8CdTTFVpkPjwI19RvHqMVgwi9Om9dmMlEpBtX5Gmu8LZciJC8emQ_KLwS-B4cAg/exec";
 
   let mediaRecorder;
@@ -116,6 +116,24 @@
   let timerInterval;
   let secondsElapsed = 0;
   let recordedAudioBase64 = null;
+  let selectedMimeType = '';
+
+  // Detects best supported audio format (audio/mp4 for iOS Safari, audio/webm for Chrome/Chromebooks)
+  function getSupportedMimeType() {
+    const types = [
+      'audio/mp4',
+      'audio/aac',
+      'audio/webm;codecs=opus',
+      'audio/webm'
+    ];
+
+    for (const type of types) {
+      if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(type)) {
+        return type;
+      }
+    }
+    return '';
+  }
 
   function validateForm() {
     const name = document.getElementById('name').value.trim();
@@ -133,21 +151,33 @@
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorder = new MediaRecorder(stream);
+      
+      selectedMimeType = getSupportedMimeType();
+      const options = selectedMimeType ? { mimeType: selectedMimeType } : {};
+
+      mediaRecorder = new MediaRecorder(stream, options);
       audioChunks = [];
 
       mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        const audioBlob = new Blob(audioChunks, { type: selectedMimeType || 'audio/mp4' });
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
+        
         reader.onloadend = () => {
           recordedAudioBase64 = reader.result;
-          document.getElementById('previewArea').innerHTML = `<audio controls src="${URL.createObjectURL(audioBlob)}"></audio>`;
+          const audioUrl = URL.createObjectURL(audioBlob);
+          
+          // Render HTML5 audio player with playsinline attribute for iOS Safari compatibility
+          document.getElementById('previewArea').innerHTML = `
+            <audio controls playsinline src="${audioUrl}"></audio>
+          `;
+          
           document.getElementById('submitBtn').disabled = false;
           document.getElementById('status').innerText = "Recording ready! Click Submit Assignment.";
           document.getElementById('status').style.color = "#16a34a";
         };
+        
         stream.getTracks().forEach(track => track.stop());
       };
 
@@ -199,7 +229,13 @@
       exam: document.getElementById('exam').value
     };
 
-    const fileName = `${studentInfo.name}_Grade${studentInfo.grade}_${studentInfo.exam}.webm`;
+    // Determine extension dynamically (.m4a for iOS Safari, .webm for Chrome/PCs)
+    let extension = ".webm";
+    if (selectedMimeType.includes("mp4") || selectedMimeType.includes("aac")) {
+      extension = ".m4a";
+    }
+
+    const fileName = `${studentInfo.name}_Grade${studentInfo.grade}_${studentInfo.exam}${extension}`;
 
     const payload = {
       rawDataUrl: recordedAudioBase64,
